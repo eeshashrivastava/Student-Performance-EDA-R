@@ -14,5 +14,20 @@ This project explores academic performance using a synthetic student dataset thr
 - Screen time and stress are negatively associated with GPA
 - Demographic effects are smaller and more uncertain
 
+## Visuals
+
+### GPA vs Study Hours
+![GPA vs Study Hours](plots/gpa_vs_study_hours.png)
+
+### Bayesian Posterior Estimates
+![Posterior Intervals](plots/bayesian_coeff_intervals.png)
+
+## How to Run
+
+1. Run `01_generate_data.R` to generate the synthetic dataset (or use the provided `data/dataset.csv`)
+2. Knit `02_eda_analysis.Rmd` to reproduce exploratory analysis and visualizations
+3. Knit `03_bayesian_modeling.Rmd` to run the Bayesian regression and diagnostics
+
+
 ## Notes
 All results are based on synthetic data and are intended for demonstration purposes only.
