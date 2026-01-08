@@ -1,0 +1,125 @@
+---
+title: "03_bayesian_modeling"
+author: "Eesha Shrivastava"
+date: "2026-01-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(rstanarm)
+library(bayesplot)
+
+set.seed(42)
+
+dir.create("plots", showWarnings = FALSE)
+
+save_plot <- function(p, filename, w = 8, h = 5) {
+  ggsave(filename = file.path("plots", filename), plot = p, width = w, height = h, dpi = 300)
+}
+```
+
+
+##Load and prep data 
+
+```{r load-data}
+data <- read.csv("data/dataset.csv")
+
+# Simple NA handling (keep it transparent)
+df <- data |>
+  mutate(
+    Study_Hours_Per_Day = ifelse(is.na(Study_Hours_Per_Day),
+                                 median(Study_Hours_Per_Day, na.rm = TRUE),
+                                 Study_Hours_Per_Day),
+    Sleep_Hours_Per_Night = ifelse(is.na(Sleep_Hours_Per_Night),
+                                   median(Sleep_Hours_Per_Night, na.rm = TRUE),
+                                   Sleep_Hours_Per_Night)
+  )
+
+glimpse(df)
+
+```
+## Fit a Bayesian regression
+```{r bayesian-model}
+m1 <- stan_glm(
+  GPA ~ Study_Hours_Per_Day + Sleep_Hours_Per_Night + Screen_Time_Hours_Per_Day +
+    Stress_Score + Physical_Activity_Hours_Per_Day + Extracurricular_Hours_Per_Day +
+    Gender + Year,
+  data = df,
+  family = gaussian(),
+  prior = normal(0, 1),
+  prior_intercept = normal(3, 1),
+  chains = 4,
+  iter = 2000,
+  seed = 42
+)
+
+print(m1, digits = 2)
+```
+
+
+## Posterior diagnostics 
+
+```{r posterior-checks}
+# Posterior predictive check
+ppc <- posterior_predict(m1, draws = 200)
+p_ppc <- ppc_dens_overlay(y = df$GPA, yrep = ppc[1:50, ])
+
+p_ppc
+save_plot(p_ppc, "ppc_gpa_overlay.png", w = 8, h = 5)
+```
+
+
+
+## Coefficient interpretation plot
+
+```{r coef-plot}
+p_coef <- mcmc_areas(
+  as.matrix(m1),
+  pars = names(coef(m1))[-1],  # drop intercept
+  prob = 0.8,
+  prob_outer = 0.95
+) + ggtitle("Posterior Estimates (80% and 95% intervals)")
+
+p_coef
+ggsave(file.path("plots", "bayesian_coeff_intervals.png"), p_coef, width = 10, height = 6, dpi = 300)
+```
+
+## Model Results (Interpretation)
+
+Based on the posterior intervals:
+
+- **Study_Hours_Per_Day** shows the strongest positive association with GPA
+- **Sleep_Hours_Per_Night** is also positively associated, supporting the EDA pattern that moderate sleep aligns with higher GPA
+- **Screen_Time_Hours_Per_Day** and **Stress_Score** trend negative, suggesting higher screen time and stress correspond to lower GPA
+- **Gender** and **Year** effects are smaller and more uncertain relative to behavioral factors
+
+These results describe associations in synthetic data and do not imply causation.
+```{r ppc-save}
+ppc <- posterior_predict(m1, draws = 200)
+
+p_ppc <- ppc_dens_overlay(
+  y = df$GPA,
+  yrep = ppc[1:50, ]
+)
+
+p_ppc
+save_plot(p_ppc, "ppc_gpa_overlay.png", w = 9, h = 5)
+```
+
+
+```{r coef-save}
+p_coef <- mcmc_areas(
+  as.matrix(m1),
+  pars = names(coef(m1))[-1],
+  prob = 0.8,
+  prob_outer = 0.95
+) + ggtitle("Posterior Estimates (80% and 95% intervals)")
+
+p_coef
+ggsave(file.path("plots", "bayesian_coeff_intervals.png"), p_coef, width = 10, height = 6, dpi = 300)
+print(m1, digits = 2)
+```
+

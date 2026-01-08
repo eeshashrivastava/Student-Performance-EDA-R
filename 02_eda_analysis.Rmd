@@ -1,0 +1,123 @@
+---
+title: "Student Performance EDA (Synthetic Data)"
+author: "Eesha Shrivastava"
+date: "2026-01-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+library(knitr)
+
+dir.create("plots", showWarnings = FALSE)
+
+save_plot <- function(p, filename, w = 8, h = 5) {
+  ggsave(filename = file.path("plots", filename), plot = p, width = w, height = h, dpi = 300)
+}
+```
+
+
+```{r}
+data <- read.csv("data/dataset.csv")
+glimpse(data)
+summary(data)
+colSums(is.na(data))
+```
+
+
+## Dataset Overview
+
+```{r}
+nrow(data)
+ncol(data)
+names(data)
+```
+
+
+## Variable Types
+
+```{r}
+numeric_vars <- data |> select(where(is.numeric)) |> names()
+categorical_vars <- data |> select(where(is.character)) |> names()
+
+numeric_vars
+categorical_vars
+```
+
+## GPA Distribution
+
+```{r}
+p_gpa <- ggplot(data, aes(x = GPA)) +
+  geom_histogram(bins = 30) +
+  labs(
+    title = "Distribution of GPA",
+    x = "GPA",
+    y = "Number of Students"
+  )
+
+p_gpa
+```
+
+```{r}
+save_plot(p_gpa, "gpa_distribution.png")
+```
+
+## GPA vs Study Hours
+
+```{r}
+p_study <- ggplot(data, aes(x = Study_Hours_Per_Day, y = GPA)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "GPA vs Daily Study Hours",
+    x = "Study Hours Per Day",
+    y = "GPA"
+  )
+
+p_study
+```
+
+```{r}
+save_plot(p_study, "gpa_vs_study_hours.png")
+```
+
+## GPA by Sleep Duration
+
+```{r}
+p_sleep <- ggplot(data, aes(x = cut(Sleep_Hours_Per_Night, breaks = c(0,5,6,7,8,9,12)), y = GPA)) +
+  geom_boxplot() +
+  labs(
+    title = "GPA by Sleep Duration",
+    x = "Sleep Hours Per Night (Binned)",
+    y = "GPA"
+  )
+
+p_sleep
+```
+
+```{r}
+save_plot(p_sleep, "gpa_by_sleep.png")
+```
+
+
+## GPA by Gender
+
+```{r}
+p_gender <- ggplot(data, aes(x = Gender, y = GPA)) +
+  geom_boxplot() +
+  labs(
+    title = "GPA by Gender",
+    x = "Gender",
+    y = "GPA"
+  )
+
+p_gender
+```
+
+
+```{r}
+save_plot(p_gender, "gpa_by_gender.png")
+```
+
+
